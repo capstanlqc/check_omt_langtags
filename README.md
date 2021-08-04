@@ -22,4 +22,10 @@ The script will look for the following items:
 
 You can clone this repository in your machine, and then call the script like:
 
-    bash check_omt_langtags.sh --input path/to/package.omt --convention ETS --region
+    bash check_omt_langtags.sh --input path/to/package.omt --convention PISA --region
+
+In case of doubt, check the script's help:
+
+    bash check_omt_langtags.sh --help
+
+or write to [manuel.souto@capstan.be](manuel.souto@capstan.be).
