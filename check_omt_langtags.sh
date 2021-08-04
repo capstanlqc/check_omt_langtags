@@ -12,16 +12,17 @@ function usage() {
   fi
   echo "Usage: $0 -i path-to-omt-pkg -c convention [-r] [-s xx]"
   echo "  -i, --input         Path to the OMT package (required)"
-  echo "  -c, --convention    Language code convention: ETS or cApStAn (required)"
-  echo "  -r, --region        Whether region subtags should be considered (optional)"
-  echo "  -s, --source        Source language as BCP-47 tag (required only if different from 'en')"
+  echo "  -c, --convention    Language code convention: PISA or cApStAn (required)"
+  echo "  -r, --region        Whether region subtags should be considered (required for now)"
+  echo "  -s, --source        Source language as BCP-47 subtag, without region or script, e.g. fr"
+  echo "                      (required only if different from 'en')"
   echo ""
-  echo "Example: bash $0 --input /path/to/packages/PISA_glg-ESP_OMT.omt --convention ETS --region --source en"
+  echo "Example: bash $0 --input /path/to/packages/PISA_glg-ESP_OMT.omt --convention PISA --region --source en"
   exit 1
 }
 
 # call as:
-# bash check_omt_langtags.sh --input files/PISA2022MS_nld-BEL_OMT_Questionnaires.omt --convention ETS --region --source en
+# bash check_omt_langtags.sh --input files/PISA2022MS_nld-BEL_OMT_Questionnaires.omt --convention PISA --region --source en
 
 # == ARGUMENTS == 
 while [[ "$#" -gt 0 ]]; do
@@ -50,15 +51,18 @@ if [ -z ${region+x} ]; then die "Only the full language tag (including region su
 If you really need to analyze only the language subtags, get in touch with the script's author."; fi
 
 # validate convention
-if test "$convention" != "ETS" && test "$convention" != "cApStAn"; then
-  usage "Accepted language code conventions include 'ETS' and 'cApStAn'. You have used '${convention}'."
+if test "$convention" != "PISA" && test "$convention" != "cApStAn"; then
+  usage "Accepted language code conventions include 'PISA' and 'cApStAn'. You have used '${convention}'."
 fi
 
 
 # == DEPENDENCIES ==
 # for debian-based
-sudo apt -qq install jq > /dev/null 2>&1
-sudo apt -qq install curl > /dev/null 2>&1
+if ! which curl > /dev/null || ! which jq > /dev/null; then
+  echo "This script needs to install two dependencies (jq and curl) if they are not installed. Your sudo password might be required now."
+  sudo apt -qq install jq > /dev/null 2>&1
+  sudo apt -qq install curl > /dev/null 2>&1
+fi
 
 
 # == LOGIC == 
@@ -76,7 +80,7 @@ if [ -z ${langtags+x} ]; then die "Unable to fetch language tags data, make sure
 echo "OMT package: ${input}"
 echo "Convention: ${convention}"
 echo "Language tags data: Fetched"
-echo "Region is: Set (should be included in checks)"
+#echo "Region is: Set (should be included in checks)"
 
 # get XXX language code from omt filename
 target_xxx_code=$(echo "$input" | grep -Poh '(?<=\b|_)([a-z]{3}-[A-Z]{3})(?=\b|_)')
@@ -84,16 +88,8 @@ if [ -z $target_xxx_code ]; then output+=("👉 No target language code detected
 #[ -e "$target_xxx_code" ] || output+=("👉 No language code detected in the OMT package's filename.")
 echo "${convention} language code: ${target_xxx_code}"
 
-
-
-
 # get correspondent omegat target language tag
-if [[ "$convention" == "ETS" ]]; then
-  omt_tgtlang_tag=$(echo $langtags | jq -cr --arg CODE "$target_xxx_code" 'map(select(.PISA == $CODE))'[].OmegaT)
-elif [[ "$convention" == "cApStAn" ]]; then
-  omt_tgtlang_tag=$(echo $langtags | jq -cr --arg CODE "$target_xxx_code" 'map(select(.cApStAn == $CODE))'[].OmegaT)
-fi
-
+omt_tgtlang_tag=$(echo $langtags | jq -cr --arg CODE "$target_xxx_code" --arg CONV "$convention" 'map(select(.[$CONV] == $CODE))'[].OmegaT)
 if [ -z $omt_tgtlang_tag ]; then output+=("👉 Target language code '${target_xxx_code}' not valid in package name"); fi
 #[ -e "$target_xxx_code" ] || output+=("👉 No language code detected in the OMT package's filename.")
 echo "OmegaT target language tag: ${omt_tgtlang_tag}"
@@ -114,11 +110,7 @@ source_lang_in_project=$(grep -Poh '(?<=source_lang>)[^<]+' omegat.project)
 echo "Source language tag in project settings: ${source_lang_in_project}"
 
 # get correspondent omegat target language tag
-if [[ $convention == "ETS" ]]; then
-  source_xxx_code=$(echo $langtags | jq -cr --arg CODE "$source_lang_in_project" 'map(select(.OmegaT == $CODE))'[].PISA)
-elif [[ $convention == "cApStAn" ]]; then
-  source_xxx_code=$(echo $langtags | jq -cr --arg CODE "$source_lang_in_project" 'map(select(.OmegaT == $CODE))'[].cApStAn)
-fi
+source_xxx_code=$(echo $langtags | jq -cr --arg CODE "$source_lang_in_project" 'map(select(.OmegaT == $CODE))'[].$convention)
 if [ -z $source_xxx_code ]; then output+=("👉 Source language code '${source_lang_in_project}' not valid in project settings"); fi
 #[ -e "$target_xxx_code" ] || output+=("👉 No language code detected in the OMT package's filename.")
 echo "${convention} source language code: ${source_xxx_code}"
