@@ -125,7 +125,6 @@ unzip -qo -d $prj_dir "$input"
 # XLIFF files
 
 # check target language code in source xliff files
-#for f in $(find "extracted_project/source" -name "*.xlf" -type f); do
 for f in $(find "$prj_dir/source" -name "*.xlf" -type f); do
   for code in $(grep -Poh '(?<=(<target xml:lang| target-language)=")[^"]+' $f | sort | uniq); do
     if test "$code" != "$target_xxx_code" && test "$code" != "$target_lang_in_project"; then
@@ -135,7 +134,6 @@ for f in $(find "$prj_dir/source" -name "*.xlf" -type f); do
 done
 
 # check source language code in source xliff files
-#for f in $(find "extracted_project/source" -name "*.xlf" -type f); do
 for f in $(find "$prj_dir/source" -name "*.xlf" -type f); do
   for code in $(grep -Poh '(?<=(<source xml:lang| source-language)=")[^"]+' $f | sort | uniq); do
     if test "$code" != "$source_xxx_code" && test "$code" != "$source_lang_in_project"; then
@@ -149,7 +147,6 @@ done
 
 
 # check source language code in source xliff files
-#for f in $(find extracted_project/{tm,omegat} -name "*.tmx" -type f); do
 for f in $(find $prj_dir/{tm,omegat} -name "*.tmx" -type f); do
   srclang=$(grep -Poh '(?<=srclang=")[^"]+' $f)
   for code in $(grep -Poh '(?<=(xml:lang|tuv lang| srclang)=")[^"]+' $f | sort | uniq); do
@@ -162,7 +159,6 @@ for f in $(find $prj_dir/{tm,omegat} -name "*.tmx" -type f); do
 done
 
 # check target language code in source xliff files
-#for f in $(find extracted_project/{tm,omegat} -name "*.tmx" -type f); do
 for f in $(find $prj_dir/{tm,omegat} -name "*.tmx" -type f); do
   srclang=$(grep -Poh '(?<=srclang=")[^"]+' $f)
   for code in $(grep -Poh '(?<=(xml:lang|tuv lang)=")[^"]+' $f | sort | uniq); do
