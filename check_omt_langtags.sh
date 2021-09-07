@@ -109,7 +109,7 @@ source_lang_in_project=$(grep -Poh '(?<=source_lang>)[^<]+' omegat.project)
 [[ $source_lang_in_project =~ $source ]] || output+=("👉 Source language tag '${source_lang_in_project}' in project settings is not a variant of '${source}'")
 echo "Source language tag in project settings: ${source_lang_in_project}"
 
-# get correspondent omegat target language tag
+# get correspondent omegat source language tag
 source_xxx_code=$(echo $langtags | jq -cr --arg CODE "$source_lang_in_project" 'map(select(.OmegaT == $CODE))'[].$convention)
 if [ -z $source_xxx_code ]; then output+=("👉 Source language code '${source_lang_in_project}' not valid in project settings"); fi
 #[ -e "$target_xxx_code" ] || output+=("👉 No language code detected in the OMT package's filename.")
